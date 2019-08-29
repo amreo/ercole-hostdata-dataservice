@@ -16,77 +16,16 @@
 package controller
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
-	"runtime"
-
-	"github.com/amreo/ercole-hostdata-dataservice/model"
-	"github.com/amreo/ercole-hostdata-dataservice/service"
-	null "gopkg.in/guregu/null.v3"
 
 	"github.com/gorilla/mux"
 )
 
-func SetupRoutes(router *mux.Router) {
+func SetupRoutesForHostDataController(router *mux.Router, ctrl HostDataControllerInterface) {
+	router.Use(ctrl.AuthenticateMiddleware())
+
 	router.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Pong"))
 	})
-	router.HandleFunc("/hosts", updateHost).Methods("POST")
-}
-
-func updateHost(w http.ResponseWriter, r *http.Request) {
-	var hostData model.HostData
-
-	if err := json.NewDecoder(r.Body).Decode(&hostData); err != nil {
-		writeResponsError(w, http.StatusUnprocessableEntity, err)
-		return
-	}
-	log.Println(hostData)
-
-	err := service.SaveHostData(hostData)
-	if err != nil {
-		writeResponsError(w, http.StatusUnprocessableEntity, err)
-		internalServerErrorWithError(err)
-		return
-	}
-}
-
-//ErrorResponseFE : struct describing errors in response
-type ErrorResponseFE struct {
-	Error            null.String
-	ErrorDescription null.String
-}
-
-func writeResponsError(w http.ResponseWriter, statusCode int, err error) {
-	writeJSONResponse(w, statusCode, ErrorResponseFE{
-		Error:            null.StringFrom(http.StatusText(statusCode)),
-		ErrorDescription: null.StringFrom(err.Error()),
-	})
-}
-
-// writeJSONResponse write the statuscode and the response to w
-func writeJSONResponse(w http.ResponseWriter, statusCode int, resp interface{}) {
-	//Write the response
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(resp)
-}
-
-// internalServerError log the caller code position and write to w 500 Internal Server Error
-func internalServerError() {
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		log.Println(file, ":", line)
-	}
-}
-
-// internalServerErrorWithError log the error with the caller code position and write to w 500 Internal Server Error
-func internalServerErrorWithError(err error) {
-	_, file, line, ok := runtime.Caller(1)
-	if ok {
-		log.Println(file, ":", line, "err:", err)
-	} else {
-		log.Println("??? err:", err)
-	}
+	router.HandleFunc("/hosts", ctrl.UpdateHostInfo).Methods("POST")
 }

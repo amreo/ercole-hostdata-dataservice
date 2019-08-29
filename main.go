@@ -16,6 +16,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -43,5 +44,5 @@ func main() {
 	} else {
 		logRouter = mainRouter
 	}
-	http.ListenAndServe(config.Config.HttpServer.Listen, cors.AllowAll().Handler(logRouter))
+	http.ListenAndServe(fmt.Sprintf(":%d", config.Config.HttpServer.Port), cors.AllowAll().Handler(logRouter))
 }

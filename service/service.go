@@ -27,6 +27,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type ServiceInterface interface {
+	UpdateHostInfo(hostdata model.HostData) error
+}
+
+type Service struct {
+}
+
 var Client *mongo.Client
 
 func SetupDatabase() {
